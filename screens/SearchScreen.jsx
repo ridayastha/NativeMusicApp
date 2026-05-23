@@ -9,17 +9,26 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Combine our dummy datasets into a single searchable array pool
+  // Adding defensive array mapping just in case a section is undefined
   const allTracks = [
-    ...RECENT_GRID,
-    ...CAROUSEL_SECTIONS[0].data,
-    ...CAROUSEL_SECTIONS[1].data,
+    ...(RECENT_GRID || []),
+    ...(CAROUSEL_SECTIONS?.[0]?.data || []),
+    ...(CAROUSEL_SECTIONS?.[1]?.data || []),
   ];
 
-  // Filter track items against current search string text
-  const filteredTracks = allTracks.filter(track => 
-    track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    track.artist.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter track items against current search string text (SAFE VERSION)
+  const filteredTracks = allTracks.filter(track => {
+  const trackTitle = track?.title?.toLowerCase() || '';
+  const trackArtist = track?.artist?.toLowerCase() || '';
+  const trackCategory = track?.category?.toLowerCase() || ''; // <-- Map your mock 'category' field
+  const query = searchQuery?.toLowerCase() || '';
+
+  return (
+    trackTitle.includes(query) || 
+    trackArtist.includes(query) || 
+    trackCategory.includes(query)
   );
+});
 
   return (
     <View style={styles.container}>
@@ -47,8 +56,10 @@ export default function SearchScreen() {
               <TouchableOpacity 
                 key={category.id} 
                 style={[styles.categoryCard, { backgroundColor: category.color }]}
+                activeOpacity={0.8}
+                onPress={() => setSearchQuery(category.title)} // <-- Updates search on tap
               >
-                <Text style={styles.cardText}>{category.title}</Text>
+                <Text style={styles.cardText} numberOfLines={2}>{category.title}</Text>
                 <Image source={{ uri: category.image }} style={styles.cardImage} />
               </TouchableOpacity>
             ))}
@@ -58,7 +69,7 @@ export default function SearchScreen() {
         /* --- Live Search Result Rows --- */
         <FlatList
           data={filteredTracks}
-          keyExtractor={(item, index) => item.id.toString() + index}
+          keyExtractor={(item, index) => (item?.id?.toString() || index.toString()) + index}
           contentContainerStyle={styles.resultListPadding}
           ListEmptyComponent={
             <View style={styles.emptyWrapper}>
@@ -67,11 +78,11 @@ export default function SearchScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.trackRow} onPress={() => playTrack(item)}>
-              <Image source={{ uri: item.cover }} style={styles.thumbnail} />
+            <TouchableOpacity style={styles.trackRow} onPress={() => playTrack && playTrack(item)}>
+              <Image source={{ uri: item?.cover || 'https://via.placeholder.com/48' }} style={styles.thumbnail} />
               <View style={styles.trackInfo}>
-                <Text style={styles.trackTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.trackArtist}>{item.artist}</Text>
+                <Text style={styles.trackTitle} numberOfLines={1}>{item?.title || 'Unknown Title'}</Text>
+                <Text style={styles.trackArtist}>{item?.artist || 'Unknown Artist'}</Text>
               </View>
               <Text style={styles.moreIcon}>•••</Text>
             </TouchableOpacity>

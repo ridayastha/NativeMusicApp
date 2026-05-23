@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,21 +16,16 @@ export default function App() {
   return (
     <AudioProvider>
       <View style={styles.rootContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#121212" />
+        <StatusBar barStyle="light-content" backgroundColor="#0A0A0A" />
+        
         <NavigationContainer>
           <Tab.Navigator
             screenOptions={{
               headerShown: false,
-              tabBarActiveTintColor: '#fff',
-              tabBarInactiveTintColor: '#b3b3b3',
-              tabBarStyle: {
-                backgroundColor: '#121212',
-                borderTopWidth: 1,
-                borderTopColor: '#282828',
-                paddingBottom: 6,
-                height: 55,
-              },
-              tabBarLabelStyle: { fontSize: 11, fontWeight: '600' }
+              tabBarActiveTintColor: '#FFFFFF',
+              tabBarInactiveTintColor: '#8E8E93', // iOS style muted gray
+              tabBarStyle: styles.tabBar,
+              tabBarLabelStyle: styles.tabBarLabel,
             }}
           >
             <Tab.Screen 
@@ -57,7 +52,7 @@ export default function App() {
               name="Library" 
               component={LibraryScreen} 
               options={{
-                tabBarLabel: 'Your Library',
+                tabBarLabel: 'Library',
                 tabBarIcon: ({ color, focused }) => (
                   <Ionicons name={focused ? "library" : "library-outline"} size={22} color={color} />
                 )
@@ -66,7 +61,7 @@ export default function App() {
           </Tab.Navigator>
         </NavigationContainer>
 
-        {/* Global persistent mini-player overlay */}
+        {/* Global floating/persistent mini-player layer */}
         <AudioPlayer />
       </View>
     </AudioProvider>
@@ -74,5 +69,26 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  rootContainer: { flex: 1, backgroundColor: '#121212' },
+  rootContainer: { 
+    flex: 1, 
+    backgroundColor: '#0A0A0A' // Slightly deeper pitch black for high-contrast UI
+  },
+  tabBar: {
+    backgroundColor: '#16161A', // Elevated dark surface
+    borderTopWidth: 1,
+    borderTopColor: '#2C2C2E', // Subtle high-contrast separation line
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    paddingTop: 8,
+    height: Platform.OS === 'ios' ? 88 : 64,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  tabBarLabel: { 
+    fontSize: 11, 
+    fontWeight: '600',
+    marginTop: 2,
+  }
 });

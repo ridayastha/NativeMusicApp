@@ -1,102 +1,126 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { Audio } from 'expo-av';
+import { RECENT_GRID } from '../constants/mockTracks'; // Fallback playlist source bank
 
 export const AudioContext = createContext();
 
 export const AudioProvider = ({ children }) => {
+  const [playbackInstance, setPlaybackInstance] = useState(null);
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackStatus, setPlaybackStatus] = useState(null);
-  
-  // Keep a reference to a single Sound instance across the entire application lifecycle
-  const soundRef = useRef(null);
+  const [queue, setQueue] = useState(RECENT_GRID); // Active track sequence block
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
 
-  // Clean up sound instance when the component unmounts
+  // Synchronize playback instance removal
   useEffect(() => {
     return () => {
-      if (soundRef.current) {
-        soundRef.current.unloadAsync();
+      if (playbackInstance) {
+        playbackInstance.unloadAsync();
       }
     };
-  }, []);
+  }, [playbackInstance]);
 
-  // Sync state update variations with live instance playback streams
   const onPlaybackStatusUpdate = (status) => {
     if (status.isLoaded) {
-      setPlaybackStatus(status);
       setIsPlaying(status.isPlaying);
-      
-      // If the track finishes playing, automatically reset state configurations
       if (status.didJustFinish) {
-        setIsPlaying(false);
-      }
-    } else {
-      if (status.error) {
-        console.error(`Playback Error Encountered: ${status.error}`);
+        if (isRepeat) {
+          // Restart identical link resource tracking parameters
+          handleReplayCurrent();
+        } else {
+          // Autoplay next index link chain item
+          handleNextTrack();
+        }
       }
     }
   };
 
   const playTrack = async (track) => {
     try {
-      if (!track || !track.url) {
-        console.warn("⚠️ Cannot play track: Missing audio URL asset reference.", track);
-        return;
+      if (playbackInstance !== null) {
+        await playbackInstance.unloadAsync();
+        setPlaybackInstance(null);
       }
 
-      // --- CRITICAL FIX: If a sound is already loaded/playing, stop and unload it first ---
-      if (soundRef.current !== null) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-
-      // Update current playing target metadata state layers
-      setCurrentTrack(track);
-      setIsPlaying(true);
-
-      // Create, configure, and initialize the new singular sound target
       const { sound } = await Audio.Sound.createAsync(
         { uri: track.url },
         { shouldPlay: true },
         onPlaybackStatusUpdate
       );
 
-      // Store the single instance into our reference tracker
-      soundRef.current = sound;
-
+      setPlaybackInstance(sound);
+      setCurrentTrack(track);
+      setIsPlaying(true);
     } catch (error) {
-      console.error("Error running playTrack loop instance within AudioContext:", error);
-      setIsPlaying(false);
+      console.warn("❌ Sound loading sequence runtime fault target:", error);
     }
   };
 
   const togglePlayPause = async () => {
-    if (!soundRef.current) return;
+    if (!playbackInstance) return;
+    if (isPlaying) {
+      await playbackInstance.pauseAsync();
+    } else {
+      await playbackInstance.playAsync();
+    }
+  };
 
-    try {
-      if (isPlaying) {
-        await soundRef.current.pauseAsync();
-        setIsPlaying(false);
-      } else {
-        await soundRef.current.playAsync();
-        setIsPlaying(true);
-      }
-    } catch (error) {
-      console.error("Error toggling track execution playback hooks:", error);
+  const handleReplayCurrent = async () => {
+    if (playbackInstance) {
+      await playbackInstance.setPositionAsync(0);
+      await playbackInstance.playAsync();
+    }
+  };
+
+  const handleNextTrack = () => {
+    if (queue.length === 0) return;
+
+    if (isShuffle) {
+      const randomIndex = Math.floor(Math.random() * queue.length);
+      playTrack(queue[randomIndex]);
+      return;
+    }
+
+    const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex < queue.length) {
+      playTrack(queue[nextIndex]);
+    } else {
+      // Loop back to index zero start point configuration position
+      playTrack(queue[0]);
+    }
+  };
+
+  const handlePrevTrack = async () => {
+    if (queue.length === 0) return;
+
+    const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
+    const prevIndex = currentIndex - 1;
+
+    if (prevIndex >= 0) {
+      playTrack(queue[prevIndex]);
+    } else {
+      // Go back to the final element in the playlist sequence stack
+      playTrack(queue[queue.length - 1]);
     }
   };
 
   return (
-    <AudioContext.Provider
-      value={{
-        currentTrack,
-        isPlaying,
-        playbackStatus,
-        playTrack,
-        togglePlayPause,
-      }}
-    >
+    <AudioContext.Provider value={{
+      currentTrack,
+      isPlaying,
+      isShuffle,
+      isRepeat,
+      setQueue,
+      setIsShuffle: () => setIsShuffle(!isShuffle),
+      setIsRepeat: () => setIsRepeat(!isRepeat),
+      playTrack,
+      togglePlayPause,
+      handleNextTrack,
+      handlePrevTrack
+    }}>
       {children}
     </AudioContext.Provider>
   );

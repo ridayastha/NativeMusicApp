@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  ScrollView, 
+  TouchableOpacity, 
+  Image, 
+  SafeAreaView, 
+  Dimensions, 
+  Platform, 
+  StatusBar 
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CATEGORIES, RECENT_GRID, CAROUSEL_SECTIONS } from '../constants/mockTracks';
 import { AudioContext } from '../context/AudioContext';
@@ -19,10 +30,9 @@ export default function HomeScreen() {
     else setGreeting("Good evening");
   }, []);
 
-  // --- Advanced Structural Filtering Pipeline ---
   const isPodcastMode = activeCategory === "Podcasts";
 
-  // 1. Filter Grid Items safely checking for undefined fields
+  // 1. Filter Grid Items safely checking for荒 fields
   const displayedGridItems = RECENT_GRID.filter(item => {
     if (item.category) {
       return item.category === activeCategory;
@@ -60,7 +70,6 @@ export default function HomeScreen() {
     };
   }).filter(section => section.data && section.data.length > 0);
 
-  // Failsafe wrapper function to protect audio player context layers
   const handleTrackSelection = (track) => {
     if (!track || !track.url) {
       console.warn("⚠️ Aborted action: Audio resource target url string missing.", track);
@@ -71,6 +80,8 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B0B0C" />
+      
       {/* --- Global Utility Header Top bar --- */}
       <View style={styles.topUtilityBar}>
         <View style={styles.leftProfileBlock}>
@@ -111,7 +122,7 @@ export default function HomeScreen() {
         {/* --- Render Interface Conditions --- */}
         {displayedGridItems.length === 0 && displayedCarousels.length === 0 ? (
           <View style={styles.emptyStateContainer}>
-            <Ionicons name="radio-outline" size={54} color="#444" />
+            <Ionicons name="radio-outline" size={54} color="#3a3a3c" />
             <Text style={styles.emptyStateText}>No content found matching "{activeCategory}".</Text>
             <Text style={styles.emptySubText}>Try adding explicit category tags inside mock data properties.</Text>
           </View>
@@ -144,7 +155,7 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* --- Dynamic Carousels List (Includes Trending Section on Top) --- */}
+            {/* --- Dynamic Carousels List --- */}
             {displayedCarousels.map((section) => (
               <View key={section.title} style={styles.sectionContainer}>
                 <Text style={styles.sectionHeading}>{section.title}</Text>
@@ -190,39 +201,90 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
-  topUtilityBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#0B0B0C' // Deep rich iOS dark mode base
+  },
+  topUtilityBar: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 16, 
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 12 : 12, 
+    paddingBottom: 10 
+  },
   leftProfileBlock: { flexDirection: 'row', alignItems: 'center' },
-  avatarCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#1DB954', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarLetter: { color: '#000', fontSize: 14, fontWeight: 'bold' },
-  greetingText: { color: '#fff', fontSize: 22, fontWeight: 'bold', letterSpacing: -0.4 },
+  avatarCircle: { 
+    width: 34, 
+    height: 34, 
+    borderRadius: 17, 
+    backgroundColor: '#1DB954', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginRight: 12,
+    // Subtle physical lift
+    shadowColor: '#1DB954',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  avatarLetter: { color: '#000', fontSize: 15, fontWeight: 'bold' },
+  greetingText: { color: '#fff', fontSize: 24, fontWeight: 'bold', letterSpacing: -0.5 },
   rightActionBlock: { flexDirection: 'row', alignItems: 'center' },
-  iconButton: { padding: 6, marginLeft: 12 },
-  scrollPadding: { paddingTop: 12, paddingBottom: 130 },
-  categoryRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 20 },
-  chip: { backgroundColor: '#2a2a2a', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, marginRight: 8 },
-  activeChip: { backgroundColor: '#1DB954' },
-  chipText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  activeChipText: { color: '#000' },
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 24 },
-  gridCard: { width: '49%', backgroundColor: '#282828', flexDirection: 'row', alignItems: 'center', borderRadius: 6, marginBottom: 8, overflow: 'hidden', height: 56 },
-  activeCardHighlight: { backgroundColor: '#333' },
-  gridImage: { width: 56, height: 56 },
-  gridContentBlock: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, paddingHorizontal: 8 },
-  gridTitle: { color: '#fff', fontSize: 12, fontWeight: 'bold', flex: 1 },
-  activeGreenText: { color: '#1DB954', fontWeight: 'bold' },
+  iconButton: { 
+    padding: 8, 
+    marginLeft: 8, 
+    backgroundColor: 'rgba(255,255,255,0.06)', 
+    borderRadius: 20 
+  },
+  scrollPadding: { paddingTop: 12, paddingBottom: 140 },
+  categoryRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 22 },
+  chip: { 
+    backgroundColor: 'rgba(255,255,255,0.08)', 
+    paddingVertical: 8, 
+    paddingHorizontal: 18, 
+    borderRadius: 20, 
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.03)'
+  },
+  activeChip: { 
+    backgroundColor: '#fff',
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  chipText: { color: '#eee', fontSize: 13, fontWeight: '600' },
+  activeChipText: { color: '#000', fontWeight: '700' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 26 },
+  gridCard: { 
+    width: '49%', 
+    backgroundColor: 'rgba(255,255,255,0.05)', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderRadius: 8, 
+    marginBottom: 10, 
+    overflow: 'hidden', 
+    height: 58,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.03)'
+  },
+  activeCardHighlight: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.1)' },
+  gridImage: { width: 58, height: 58 },
+  gridContentBlock: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1, paddingHorizontal: 10 },
+  gridTitle: { color: '#fff', fontSize: 12, fontWeight: '600', flex: 1, lineHeight: 16 },
+  activeGreenText: { color: '#1DB954', fontWeight: '700' },
   playingIndicator: { marginLeft: 4 },
-  sectionContainer: { marginBottom: 30 },
-  sectionHeading: { color: '#fff', fontSize: 20, fontWeight: 'bold', paddingHorizontal: 16, marginBottom: 14, letterSpacing: -0.3 },
+  sectionContainer: { marginBottom: 32 },
+  sectionHeading: { color: '#fff', fontSize: 21, fontWeight: 'bold', paddingHorizontal: 16, marginBottom: 14, letterSpacing: -0.4 },
   carouselScroll: { paddingLeft: 16 },
   showcaseCard: { width: 144, marginRight: 16 },
-  widerTrendingCard: { width: 190 },
-  showcaseImage: { width: 144, height: 144, borderRadius: 6, marginBottom: 8 },
-  widerTrendingImage: { width: 190, height: 120 },
-  showcaseTitle: { color: '#fff', fontSize: 13, fontWeight: '700', marginBottom: 2 },
-  showcaseArtist: { color: '#b3b3b3', fontSize: 11, fontWeight: '500', marginBottom: 4 },
-  showcaseDesc: { color: '#9f9f9f', fontSize: 11, lineHeight: 15 },
-  emptyStateContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 100, paddingHorizontal: 40 },
-  emptyStateText: { color: '#fff', fontSize: 15, fontWeight: '600', marginTop: 16, textAlign: 'center' },
-  emptySubText: { color: '#777', fontSize: 12, marginTop: 6, textAlign: 'center', lineHeight: 18 }
+  widerTrendingCard: { width: 210 },
+  showcaseImage: { width: 144, height: 144, borderRadius: 10, marginBottom: 10 },
+  widerTrendingImage: { width: 210, height: 130, borderRadius: 10 },
+  showcaseTitle: { color: '#fff', fontSize: 13, fontWeight: '600', marginBottom: 2, letterSpacing: -0.1 },
+  showcaseArtist: { color: '#929296', fontSize: 12, fontWeight: '500', marginBottom: 3 },
+  showcaseDesc: { color: '#636366', fontSize: 11, lineHeight: 15 }
 });
